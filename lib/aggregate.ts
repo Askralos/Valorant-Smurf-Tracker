@@ -1,7 +1,7 @@
 // lib/aggregate.ts — agrégation et calculs pondérés
 import type { AccountInput, Region } from "./henrik";
 import { unstable_cache } from "next/cache";
-import { getAccount, getMMR, getMmrHistory, getStoredMatchesPaged, getMatchById } from "./henrik";
+import { getAccount, getMMR, getMmrHistory, getStoredMatchesPaged } from "./henrik";
 import rawAccount from './account.json'
 
 export type AccountStats = {
@@ -9,7 +9,7 @@ export type AccountStats = {
     peakRank: string;
     peakRankId?: number;
     previousActRank?: string;
-    previousActRankId?: number; // << ajout
+    previousActRankId?: number;
     matches: number;
     kd: number;
     hs: number;
@@ -24,10 +24,15 @@ export type AccountStats = {
     };
 };
 
-
 const parseSeasonShort = (s: string) => {
     const m = /^e(\d+)a(\d+)$/i.exec(s);
     return m ? [Number(m[1]), Number(m[2])] : [0, 0];
+};
+
+// typage minimal des entrées saisonnières MMR
+type SeasonalEntry = {
+    season: { short: string };
+    end_tier?: { id?: number; name?: string };
 };
 
 export async function buildAccountStats(a: AccountInput): Promise<AccountStats> {
@@ -36,9 +41,10 @@ export async function buildAccountStats(a: AccountInput): Promise<AccountStats> 
 
     // previous act rank
     let previousActRank: string | undefined;
-    let previousActRankId: string | undefined;
+    let previousActRankId: number | undefined;
+
     if (Array.isArray(mmr.data?.seasonal)) {
-        const sorted = [...mmr.data.seasonal].sort((x: any, y: any) => {
+        const sorted = [...(mmr.data.seasonal as SeasonalEntry[])].sort((x, y) => {
             const [ex, ax] = parseSeasonShort(x.season.short);
             const [ey, ay] = parseSeasonShort(y.season.short);
             return ex - ey || ax - ay;
@@ -46,13 +52,13 @@ export async function buildAccountStats(a: AccountInput): Promise<AccountStats> 
         if (sorted.length >= 2) {
             const prev = sorted[sorted.length - 2];
             previousActRank = prev?.end_tier?.name;
-            previousActRankId = prev?.end_tier?.id; // << ajout
+            previousActRankId = prev?.end_tier?.id;
         }
     }
 
     const SIZE = Number(process.env.STORED_PAGE_SIZE ?? 100);
     const MAX_PAGES = Number(process.env.MAX_STORED_PAGES ?? 3);
-    let totals = {
+    const totals = {
         kills: 0, deaths: 0, assists: 0,
         head: 0, body: 0, leg: 0,
         dmg: 0, rounds: 0, wins: 0, matches: 0, ms: 0,
@@ -109,9 +115,8 @@ export async function buildAccountStats(a: AccountInput): Promise<AccountStats> 
     };
 }
 
-
 export async function buildDashboard() {
-    const accounts: AccountInput[] = (rawAccount as any[])
+    const accounts: AccountInput[] = (rawAccount as AccountInput[])
         .filter((a) => !a.disabled)
         .map((a) => ({
             ...a,
@@ -129,7 +134,6 @@ export async function buildDashboard() {
             highestRankName = acc.peakRank;
         }
     }
-
 
     // Agrégats globaux (pondérés)
     const total = perAccount.reduce(
@@ -155,7 +159,7 @@ export async function buildDashboard() {
         winrate: Number(((total.wins / (total.matches || 1)) * 100).toFixed(1)),
         hoursTracked: Number(total.hours.toFixed(1)),
         matches: total.matches,
-        peakRank: highestRankName,      // << ajout
+        peakRank: highestRankName,
         peakRankId: highestRankId
     };
 
@@ -163,7 +167,6 @@ export async function buildDashboard() {
 }
 
 // Cache the dashboard computation to limit API calls.
-// Revalidate periodically and allow manual tag-based revalidation.
 export const getDashboard = unstable_cache(
     buildDashboard,
     ["dashboard-cache-key"],

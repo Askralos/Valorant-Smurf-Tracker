@@ -4,8 +4,7 @@ const BASE = "https://api.henrikdev.xyz";
 const KEY = process.env.HENRIK_API_KEY!;
 
 export type Region = "eu" | "na" | "latam" | "br" | "ap" | "kr";
-export type AccountInput = { region: Region; name: string; tag: string };
-
+export type AccountInput = { region: Region; name: string; tag: string; disabled: boolean };
 
 async function hFetch<T>(path: string, search?: Record<string, string | number>) {
     return schedule(async () => {
@@ -22,22 +21,40 @@ async function hFetch<T>(path: string, search?: Record<string, string | number>)
     });
 }
 
-
 // — Endpoints
 export const getAccount = (a: AccountInput) =>
     hFetch<{ data: { account_level: number; puuid: string; region: string } }>(
         `/valorant/v2/account/${a.name}/${a.tag}`
     );
 
+export type MMRSeason = {
+    season: { short: string };
+    end_tier?: { id?: number; name?: string };
+};
+
+export type MMRResponse = {
+    data: {
+        peak?: { tier?: { id?: number; name?: string }; highest_rank?: { patched_tier?: string } };
+        seasonal?: MMRSeason[];
+    };
+};
+
 export const getMMR = (a: AccountInput) =>
-    hFetch<{ data: any }>(`/valorant/v3/mmr/${a.region}/pc/${a.name}/${a.tag}`);
+    hFetch<MMRResponse>(`/valorant/v3/mmr/${a.region}/pc/${a.name}/${a.tag}`);
+
+export type MmrHistoryResponse = {
+    data: {
+        account: { puuid: string; name: string; tag: string };
+        history: { date: string }[];
+    };
+};
 
 export const getMmrHistory = (a: AccountInput) =>
-    hFetch<{ data: { account: any; history: { date: string }[] } }>(
+    hFetch<MmrHistoryResponse>(
         `/valorant/v2/mmr-history/${a.region}/pc/${a.name}/${a.tag}`
     );
 
-type StoredMatch = {
+export type StoredMatch = {
     meta: { id: string; season: { short: string } };
     stats: {
         team: "red" | "blue";
@@ -57,5 +74,11 @@ export async function getStoredMatchesPaged(a: AccountInput, page: number, size:
     );
 }
 
+export type MatchByIdResponse = {
+    data: {
+        metadata: { game_length: number };
+    };
+};
+
 export const getMatchById = (id: string, region: Region) =>
-    hFetch<{ data: { metadata: { game_length: number } } }>(`/valorant/v4/match/${region}/${id}`);
+    hFetch<MatchByIdResponse>(`/valorant/v4/match/${region}/${id}`);
