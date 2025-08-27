@@ -1,0 +1,34 @@
+[
+    {
+        "region": "eu",
+        "name": "Askralos",
+        "tag": "OKEO"
+    },
+    {
+        "region": "eu",
+        "name": "HaerinSimp",
+        "tag": "7880",
+        "disabled": true
+    },
+    {
+        "region": "eu",
+        "name": "Ponkilane",
+        "tag": "6910"
+    },
+    {
+        "region": "eu",
+        "name": "Pohbohr",
+        "tag": "ASVA"
+    },
+    {
+        "region": "eu",
+        "name": "Kuitiw",
+        "tag": "7864",
+        "disabled": true
+    },
+    {
+        "region": "eu",
+        "name": "Sva Thom",
+        "tag": "asva"
+    }
+]
