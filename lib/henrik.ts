@@ -35,10 +35,11 @@ export type MMRSeason = {
 export type MMRResponse = {
     data: {
         peak?: { tier?: { id?: number; name?: string } };
-        highest_rank?: { patched_tier?: string };
+        highest_rank?: { patched_tier?: string };   // 
         seasonal?: MMRSeason[];
     };
 };
+
 
 
 export const getMMR = (a: AccountInput) =>
