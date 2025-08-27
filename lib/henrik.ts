@@ -34,10 +34,12 @@ export type MMRSeason = {
 
 export type MMRResponse = {
     data: {
-        peak?: { tier?: { id?: number; name?: string }; highest_rank?: { patched_tier?: string } };
+        peak?: { tier?: { id?: number; name?: string } };
+        highest_rank?: { patched_tier?: string };
         seasonal?: MMRSeason[];
     };
 };
+
 
 export const getMMR = (a: AccountInput) =>
     hFetch<MMRResponse>(`/valorant/v3/mmr/${a.region}/pc/${a.name}/${a.tag}`);
